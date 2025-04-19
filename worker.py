@@ -38,7 +38,6 @@ button_expand = paths_json['button_expand']
 button_refresh_side = paths_json['button_refresh_side']
 button_download = paths_json['button_download']
 
-# Product paths
 fuel = paths_json['fuel']
 pure = paths_json['pure']
 vehicle_class = paths_json[arg_holder[3]]
@@ -154,38 +153,27 @@ pd_worker = pd.read_excel(xlsx_renamed_path)
 pd_worker.to_csv(temp_path, index=False)
 
 # Format and save data
-# Format and save data
 trim = True if arg_holder[4] == "True" else False
+year = arg_holder[2]
 
-list_of_rows = pd_worker.values.tolist()
+with open(temp_path, 'r') as data_file:
+    rows = list(csv.reader(data_file))
+    holder = []
 
-header = return_header(list_of_rows, trim, arg_holder[2])
+    holder.append(return_header(rows, trim, year))
+    number_of_data_rows = len(rows) - 4
 
-final_data = [header]
+    for row in range(1, number_of_data_rows + 1):
+        holder.append(return_row(rows, row, trim, arg_holder[3], arg_holder[1], arg_holder[0]))
 
-serial_no = 0
-while True:
-    row = return_row(list_of_rows, serial_no, trim, arg_holder[3], arg_holder[1], arg_holder[0])
-    if row is None:
-        break
-    final_data.append(row)
-    serial_no += 1
+    with open(output_file_path, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerows(holder)
+        pd.DataFrame(holder[1:], columns=holder[0]).to_excel(output_file_path.replace('.csv', '.xlsx'), index=False)
 
-# Write final CSV
-with open(output_file_path, "w", newline='', encoding="utf-8") as f:
-    writer = csv.writer(f)
-    writer.writerows(final_data)
 
-print(f"✅ Saved formatted output: {output_file_path}")
+# Clean up temp and renamed files
+os.remove(temp_path)
+os.remove(xlsx_renamed_path)
 
-# Cleanup temp file
-try:
-    os.remove(temp_path)
-    print("🧹 Temp file cleaned up")
-except Exception as e:
-    print(f"⚠️ Temp file cleanup failed: {e}")
-
-# Quit driver
 driver.quit()
-print("✅ Driver closed successfully")
-
