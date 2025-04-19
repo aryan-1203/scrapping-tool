@@ -9,7 +9,7 @@ for f in os.listdir(output_folder_path):
 print("🧹 Old output files cleared")
 
 # Load RTOs
-with open('jsons/chhattisgarh_rtos.json', 'r') as file:
+with open('jsons/rajasthan_rtos.json', 'r') as file:
     rtos = json.load(file)
 
 # Track existing files
@@ -20,7 +20,7 @@ for item in os.listdir(output_folder_path):
     list_of_rtos_downloaded.append(item[first_dot + 1:second_dot])
 
 # Config
-state = "chhattisgarh"
+state = "rajasthan"
 years = ["2023", "2024", "2025"]
 products = ["L3P", "L3G", "L5P", "L5G"]
 trim = "True" 
