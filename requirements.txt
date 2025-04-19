@@ -2,3 +2,5 @@ streamlit
 pandas
 selenium
 openpyxl
+streamlit-authenticator
+yagmail
