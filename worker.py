@@ -6,7 +6,7 @@ from worker_actions.actions import driver
 
 short_wait = 3
 long_wait = 5
-from worker_actions import select_something, open_website, click_something, E2W, E3W, return_header, return_row
+from worker_actions.actions import select_something, open_website, click_something, E2W, E3W, return_header, return_row
 
 # Parse command-line args
 arg_holder = sys.argv[1:]
