@@ -1,6 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 import sys
 
 short_wait = 1
@@ -21,11 +23,21 @@ def open_website():
     driver.implicitly_wait(short_wait)
 
 def select_something(XPATH_dropdown_list, XPATH_list_item):
-    driver.find_element(By.XPATH, XPATH_dropdown_list).click()
-    driver.find_element(By.XPATH, XPATH_list_item).click()
+    dropdown = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, XPATH_dropdown_list))
+    )
+    dropdown.click()
+ 
+    list_item = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, XPATH_list_item))
+    )
+    list_item.click()
 
 def click_something(XPATH):
-    driver.find_element(By.XPATH, XPATH).click()
+    element = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, XPATH))
+    )
+    element.click()
 
 def E2W(two_wheeler_nt_path, two_wheeler_t_path):
     click_something(two_wheeler_nt_path)
@@ -75,74 +87,45 @@ def en_date(list_of_dates, meta_year):
     return list_of_dates_f
 
 def return_header(rows, trim, year):
-    """
-    Builds the final header for the output file.
-    :param rows: List of rows extracted from input Excel/CSV
-    :param trim: Not used currently but kept for compatibility
-    :param year: The year to use for month mapping
-    :return: List containing header fields
-    """
     # Check if rows have enough data
     if not rows or len(rows) < 4:
         print("Warning: Not enough rows to extract header. Returning default header.")
         sys.stdout.flush()
-        return ["State", "RTO", "Variant", "OEM", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Total", "Year"]
+        return ["State", "RTO", "Variant", "OEM", "Total"]
 
-    # Extract raw months from 4th row (index 3)
-    raw_months = rows[3][2:]  # Skipping first two columns: Variant, Maker
-
-    # Filter out any empty or whitespace-only entries
+    raw_months = rows[3][2:]
+    # Filter out empty headers
     raw_months = [m for m in raw_months if m and m.strip() != '']
-
-    # Convert raw month names into correct format
+    
     month_dates = en_date(raw_months, year)
-
-    # Final header
-    header = ["State", "RTO", "Variant", "OEM"] + month_dates + ["Total", "Year"]
+    header = ["State", "RTO", "Variant", "OEM"] + month_dates + ["Total"]
     return header
 
 def return_row(list_of_rows, serial_number, trim, var_ph, rto_ph, state_ph):
-    """
-    Builds a single row of data aligned with the final header.
-    :param list_of_rows: Full list of extracted rows
-    :param serial_number: Current processing row index (after header rows)
-    :param trim: Not used currently but kept for compatibility
-    :param var_ph: Placeholder for variant
-    :param rto_ph: Placeholder for rto
-    :param state_ph: Placeholder for state
-    :return: List containing row data or None if invalid
-    """
     try:
-        row_data = list_of_rows[3 + serial_number]  # Skip 3 header rows
+        row_data = list_of_rows[3 + serial_number]
     except IndexError:
         print(f"Warning: Row {3 + serial_number} is out of range. Skipping.")
         sys.stdout.flush()
         return None
 
-    # Validate row content
-    if not row_data or all((cell is None or (isinstance(cell, str) and cell.strip() == '')) for cell in row_data):
+    if not row_data or all((cell is None or cell.strip() == '') for cell in row_data):
         print(f"Warning: Empty or invalid row at index {3 + serial_number}. Skipping.")
         sys.stdout.flush()
         return None
 
-    # Extract necessary fields
-    row = row_data[1:]  # Skipping serial no. or unnecessary first column
-    maker = row[0].strip() if row[0] and isinstance(row[0], str) else "Unknown Maker"
-
-    # Month values start from 3rd index onward
+    row = row_data[1:]
+    maker = row[0].strip() if row[0] else "Unknown Maker"
     month_values_raw = row[2:]
-
+    
     month_values = []
     for val in month_values_raw:
-        if isinstance(val, str):
-            val = val.strip()
+        val = val.strip() if isinstance(val, str) else val
         try:
             month_values.append(int(val))
         except (ValueError, TypeError):
             month_values.append(0)
 
     total = sum(month_values)
-
-    # Construct final row
-    final_row = [state_ph, rto_ph, var_ph, maker] + month_values + [total, "2024"]  # Hardcoding Year=2024 here; you can make it dynamic
+    final_row = [state_ph, rto_ph, var_ph, maker] + month_values + [total]
     return final_row
